@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CASA">
+<title>CASA</title>
+<script src="https://accounts.google.com/gsi/client"></script>
+<style>
+/* ── reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  background: #0d1117;
+  color: #e6edf3;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  user-select: none;
+  overflow: hidden;
+}
+
+/* ── safe-area wrapper ── */
+#app {
+  height: 100%;
+  height: 100dvh;
+  padding:
+    max(env(safe-area-inset-top, 0px), 20px)
+    max(env(safe-area-inset-right, 0px), 16px)
+    max(env(safe-area-inset-bottom, 0px), 20px)
+    max(env(safe-area-inset-left, 0px), 16px);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── screens ── */
+.screen {
+  flex: 1;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.screen.visible { display: flex; }
+
+/* ════════════════════════════════════════
+   CONNECT SCREEN
+════════════════════════════════════════ */
+#screen-connect { gap: 36px; text-align: center; }
+
+.app-logo {
+  font-size: 52px;
+  font-weight: 900;
+  letter-spacing: 6px;
+  color: #4493f8;
+}
+
+.connect-sub {
+  font-size: 21px;
+  color: #7d8590;
+  line-height: 1.6;
+}
+
+#connect-btn {
+  padding: 22px 48px;
+  font-size: 22px;
+  font-weight: 700;
+  font-family: inherit;
+  background: #238636;
+  color: white;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+#connect-btn:active { opacity: 0.85; }
+
+.connect-note {
+  font-size: 15px;
+  color: #484f58;
+  line-height: 1.5;
+  max-width: 280px;
+}
+
+/* ════════════════════════════════════════
+   CASE SELECT SCREEN
+════════════════════════════════════════ */
+#screen-cases {
+  justify-content: flex-start;
+  padding-top: 32px;
+  width: 100%;
+  gap: 20px;
+}
+
+.screen-title {
+  font-size: 30px;
+  font-weight: 700;
+  align-self: flex-start;
+}
+
+#case-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 16px;
+}
+
+.case-btn {
+  width: 100%;
+  padding: 24px 20px;
+  font-size: 22px;
+  font-weight: 600;
+  font-family: inherit;
+  background: #161b22;
+  color: #e6edf3;
+  border: 2px solid #30363d;
+  border-radius: 14px;
+  cursor: pointer;
+  text-align: left;
+  letter-spacing: 0.5px;
+  touch-action: manipulation;
+}
+.case-btn:active { background: #1f2937; }
+
+.info-msg {
+  font-size: 18px;
+  color: #7d8590;
+  text-align: center;
+  padding: 32px 0;
+  line-height: 1.6;
+}
+.error-msg { color: #f85149; }
+
+/* ════════════════════════════════════════
+   RECORD SCREEN
+════════════════════════════════════════ */
+#screen-record {
+  position: relative;
+  width: 100%;
+  gap: 48px;
+}
+
+/* case strip at top */
+#case-strip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+#case-display {
+  font-size: 18px;
+  font-weight: 600;
+  color: #4493f8;
+  letter-spacing: 1px;
+}
+
+#switch-btn {
+  font-size: 16px;
+  color: #484f58;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 6px 0 6px 12px;
+  touch-action: manipulation;
+}
+
+/* record button */
+#record-btn {
+  width: 230px;
+  height: 230px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: inherit;
+  touch-action: manipulation;
+  background: #b91c1c;
+  box-shadow: 0 10px 40px rgba(185, 28, 28, 0.45);
+  transition: transform 0.12s;
+}
+#record-btn:active  { transform: scale(0.95); }
+
+#record-btn.recording {
+  background: #15803d;
+  box-shadow: 0 10px 40px rgba(21, 128, 61, 0.45);
+  animation: breathe 1.8s ease-in-out infinite;
+}
+
+#record-btn.saving {
+  background: #1d4ed8;
+  box-shadow: 0 10px 40px rgba(29, 78, 216, 0.45);
+  animation: none;
+  pointer-events: none;
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.05); }
+}
+
+.btn-icon  { font-size: 60px; line-height: 1; pointer-events: none; }
+.btn-label {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  color: white;
+  pointer-events: none;
+}
+
+/* status line */
+#status-text {
+  font-size: 17px;
+  color: #7d8590;
+  text-align: center;
+  max-width: 300px;
+  line-height: 1.5;
+  min-height: 54px;
+}
+#status-text.ok  { color: #3fb950; font-weight: 600; font-size: 20px; }
+#status-text.err { color: #f85149; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ────────────────── CONNECT ────────────────── -->
+  <div id="screen-connect" class="screen visible">
+    <div class="app-logo">CASA</div>
+    <div class="connect-sub">Tap to connect<br>to your case files</div>
+    <button id="connect-btn" onclick="signIn()">Sign in to Google</button>
+    <div class="connect-note">You'll only need to do this once.</div>
+  </div>
+
+  <!-- ────────────────── CASES ────────────────── -->
+  <div id="screen-cases" class="screen">
+    <div class="screen-title">Select a case</div>
+    <div id="case-list"></div>
+  </div>
+
+  <!-- ────────────────── RECORD ────────────────── -->
+  <div id="screen-record" class="screen">
+    <div id="case-strip">
+      <span id="case-display"></span>
+      <button id="switch-btn" onclick="goSwitchCase()">switch case</button>
+    </div>
+    <button id="record-btn" onclick="toggleRecord()">
+      <span class="btn-icon">🎤</span>
+      <span class="btn-label" id="btn-label">RECORD</span>
+    </button>
+    <div id="status-text">Tap to record</div>
+  </div>
+
+</div>
+<script>
+// ═══════════════════════════════════════════════════════
+//  !! CONFIGURATION — replace with your Google client ID
+// ═══════════════════════════════════════════════════════
+const CLIENT_ID     = '686432045584-4tafd5psbk2sa40q286k7jgos3f7e3hr.apps.googleusercontent.com';
+const DRIVE_SCOPE   = 'https://www.googleapis.com/auth/drive';
+const ROOT_FOLDER   = 'CASA Reports';   // top-level folder name in Google Drive
+
+// ═══════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════
+let gToken      = null;
+let tokenClient = null;
+let rootId      = null;
+let activeCase  = JSON.parse(localStorage.getItem('casa_case')  || 'null'); // {name, folderId}
+let identifiers = [];   // array from identifiers.json
+let isRecording = false;
+let accumulated = '';   // final STT text so far this session
+let recognition = null;
+
+// ═══════════════════════════════════════════════════════
+//  SCREEN HELPERS
+// ═══════════════════════════════════════════════════════
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('visible'));
+  document.getElementById('screen-' + id).classList.add('visible');
+}
+
+// ═══════════════════════════════════════════════════════
+//  HOME SCREEN ICON (canvas → apple-touch-icon)
+// ═══════════════════════════════════════════════════════
+function buildIcon() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 180;
+  const ctx = c.getContext('2d');
+  // Dark rounded background
+  ctx.fillStyle = '#0d1117';
+  if (ctx.roundRect) {
+    ctx.beginPath(); ctx.roundRect(0, 0, 180, 180, 36); ctx.fill();
+  } else {
+    ctx.fillRect(0, 0, 180, 180);
+  }
+  // Microphone body
+  ctx.fillStyle = '#4493f8';
+  if (ctx.roundRect) {
+    ctx.beginPath(); ctx.roundRect(65, 18, 50, 82, 25); ctx.fill();
+  } else {
+    ctx.fillRect(65, 18, 50, 82);
+  }
+  // Arc
+  ctx.strokeStyle = '#4493f8';
+  ctx.lineWidth   = 11;
+  ctx.lineCap     = 'round';
+  ctx.beginPath();
+  ctx.arc(90, 100, 44, Math.PI, 0, true);
+  ctx.stroke();
+  // Stand
+  ctx.beginPath();
+  ctx.moveTo(90, 144); ctx.lineTo(90, 164);
+  ctx.stroke();
+  ctx.lineCap = 'square';
+  ctx.beginPath();
+  ctx.moveTo(65, 164); ctx.lineTo(115, 164);
+  ctx.stroke();
+
+  const link = document.createElement('link');
+  link.rel = 'apple-touch-icon';
+  link.href = c.toDataURL('image/png');
+  document.head.appendChild(link);
+}
+
+// ═══════════════════════════════════════════════════════
+//  STARTUP
+// ═══════════════════════════════════════════════════════
+window.addEventListener('load', async () => {
+  buildIcon();
+  initSpeech();
+
+  // Restore saved token
+  const saved = JSON.parse(localStorage.getItem('casa_token') || 'null');
+  if (saved && Date.now() < saved.expiry) {
+    gToken = saved.token;
+  }
+
+  if (!gToken) {
+    show('connect');
+    return;
+  }
+
+  await startupFlow();
+});
+
+async function startupFlow() {
+  try {
+    await findRoot();
+    if (activeCase) {
+      identifiers = await loadIdentifiers(activeCase.folderId);
+      showRecord();
+    } else {
+      await showCases();
+    }
+  } catch(e) {
+    if (e.message === 'auth') {
+      invalidateToken();
+      show('connect');
+    } else {
+      show('connect');
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  GOOGLE AUTH
+// ═══════════════════════════════════════════════════════
+function signIn() {
+  if (!tokenClient) {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: DRIVE_SCOPE,
+      callback: async resp => {
+        if (resp.error) return;
+        gToken = resp.access_token;
+        localStorage.setItem('casa_token', JSON.stringify({
+          token:  gToken,
+          expiry: Date.now() + ((resp.expires_in || 3600) - 120) * 1000
+        }));
+        await startupFlow();
+      }
+    });
+  }
+  tokenClient.requestAccessToken();
+}
+
+function invalidateToken() {
+  gToken = null;
+  localStorage.removeItem('casa_token');
+}
+
+// ═══════════════════════════════════════════════════════
+//  DRIVE HELPERS
+// ═══════════════════════════════════════════════════════
+async function driveList(params) {
+  const qs = new URLSearchParams(params).toString();
+  const r  = await fetch(`https://www.googleapis.com/drive/v3/files?${qs}`, {
+    headers: { Authorization: 'Bearer ' + gToken }
+  });
+  if (r.status === 401) throw new Error('auth');
+  const json = await r.json();
+  return json.files || [];
+}
+
+async function driveDownload(fileId) {
+  const r = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+    headers: { Authorization: 'Bearer ' + gToken }
+  });
+  if (r.status === 401) throw new Error('auth');
+  return r.text();
+}
+
+async function driveUpload(name, parentId, text) {
+  const meta = JSON.stringify({ name, parents: [parentId], mimeType: 'text/plain' });
+  const form = new FormData();
+  form.append('metadata', new Blob([meta], { type: 'application/json' }));
+  form.append('file',     new Blob([text], { type: 'text/plain' }));
+  const r = await fetch(
+    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+    { method: 'POST', headers: { Authorization: 'Bearer ' + gToken }, body: form }
+  );
+  if (r.status === 401) throw new Error('auth');
+  if (!r.ok)           throw new Error('upload failed: ' + r.status);
+}
+
+async function findRoot() {
+  const files = await driveList({
+    q:      `name='${ROOT_FOLDER}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+    fields: 'files(id)'
+  });
+  if (!files.length) throw new Error('no-root');
+  rootId = files[0].id;
+}
+
+async function listCaseFolders() {
+  return driveList({
+    q:       `'${rootId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+    fields:  'files(id,name)',
+    orderBy: 'name'
+  });
+}
+
+async function loadIdentifiers(folderId) {
+  const files = await driveList({
+    q:      `'${folderId}' in parents and name contains 'identifiers.json' and trashed=false`,
+    fields: 'files(id)'
+  });
+  if (!files.length) return [];
+  try {
+    return JSON.parse(await driveDownload(files[0].id));
+  } catch(_) { return []; }
+}
+
+// ═══════════════════════════════════════════════════════
+//  CASE SELECT SCREEN
+// ═══════════════════════════════════════════════════════
+async function showCases() {
+  show('cases');
+  const list = document.getElementById('case-list');
+  list.innerHTML = '<div class="info-msg">Loading…</div>';
+
+  try {
+    const cases = await listCaseFolders();
+    list.innerHTML = '';
+    if (!cases.length) {
+      list.innerHTML = '<div class="info-msg">No cases found in Drive.<br>Add a case folder first.</div>';
+      return;
+    }
+    for (const c of cases) {
+      const btn = document.createElement('button');
+      btn.className   = 'case-btn';
+      btn.textContent = c.name.replace(/-/g, ' ');
+      btn.onclick     = () => selectCase(c);
+      list.appendChild(btn);
+    }
+  } catch(e) {
+    if (e.message === 'auth') { invalidateToken(); show('connect'); return; }
+    list.innerHTML = '<div class="info-msg error-msg">Could not load cases.<br>Check your connection.</div>';
+  }
+}
+
+async function selectCase(c) {
+  activeCase = { name: c.name, folderId: c.id };
+  localStorage.setItem('casa_case', JSON.stringify(activeCase));
+  identifiers = await loadIdentifiers(c.id);
+  showRecord();
+}
+
+function goSwitchCase() {
+  if (isRecording) return;   // don't switch mid-recording
+  showCases();
+}
+
+// ═══════════════════════════════════════════════════════
+//  RECORD SCREEN
+// ═══════════════════════════════════════════════════════
+function showRecord() {
+  document.getElementById('case-display').textContent =
+    (activeCase?.name || '').replace(/-/g, ' ');
+  setStatus('Tap to record', '');
+  setBtnState('idle');
+  show('record');
+}
+
+function setBtnState(state) {
+  const btn = document.getElementById('record-btn');
+  btn.classList.remove('recording', 'saving');
+  if (state === 'recording') btn.classList.add('recording');
+  if (state === 'saving')    btn.classList.add('saving');
+  document.getElementById('btn-label').textContent =
+    state === 'idle'      ? 'RECORD' :
+    state === 'recording' ? 'STOP'   : '…';
+}
+
+function setStatus(msg, type) {
+  const el = document.getElementById('status-text');
+  el.textContent = msg;
+  el.className   = type === 'ok' ? 'ok' : type === 'err' ? 'err' : '';
+}
+
+function toggleRecord() {
+  const btn = document.getElementById('record-btn');
+  if (btn.classList.contains('saving')) return;   // ignore taps while saving
+  if (isRecording) stopRecording();
+  else             startRecording();
+}
+
+// ═══════════════════════════════════════════════════════
+//  SPEECH RECOGNITION
+// ═══════════════════════════════════════════════════════
+function initSpeech() {
+  const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!Rec) return;
+
+  recognition = new Rec();
+  recognition.continuous     = true;
+  recognition.interimResults = true;
+  recognition.lang           = 'en-US';
+
+  recognition.onresult = ev => {
+    let fin = '', interim = '';
+    for (let i = ev.resultIndex; i < ev.results.length; i++) {
+      const t = ev.results[i][0].transcript;
+      if (ev.results[i].isFinal) fin += t + ' ';
+      else                       interim += t;
+    }
+    accumulated += fin;
+    // Show a brief tail of the filtered transcript so he can see it's working
+    const full     = (accumulated + interim).trim();
+    const filtered = anonymize(full);
+    const tail     = filtered.length > 90 ? '…' + filtered.slice(-90) : filtered;
+    if (tail) setStatus('🔴  ' + tail, '');
+  };
+
+  recognition.onerror = ev => {
+    // 'no-speech' is normal during pauses — swallow it
+    if (ev.error === 'no-speech' || ev.error === 'aborted') return;
+    isRecording = false;
+    setBtnState('idle');
+    setStatus('Mic error: ' + ev.error, 'err');
+  };
+
+  // Auto-restart when the engine cuts out (iOS times out ~60s)
+  recognition.onend = () => {
+    if (isRecording) {
+      try { recognition.start(); } catch(_) {}
+    }
+  };
+}
+
+function startRecording() {
+  if (!recognition) {
+    setStatus('Speech recognition not available.\nTry Safari on iOS 14.5+.', 'err');
+    return;
+  }
+  accumulated = '';
+  isRecording = true;
+  setBtnState('recording');
+  setStatus('Listening…', '');
+  try { recognition.start(); } catch(_) {}
+}
+
+async function stopRecording() {
+  isRecording = false;
+  try { recognition.stop(); } catch(_) {}
+
+  const raw = accumulated.trim();
+  if (!raw) {
+    setBtnState('idle');
+    setStatus('Nothing recorded. Tap to try again.', '');
+    return;
+  }
+
+  setBtnState('saving');
+  setStatus('Saving…', '');
+
+  const filtered = anonymize(raw);
+
+  // Build filename: "Recording 05-21-2026 2:30 PM.txt"
+  const now     = new Date();
+  const datePart = now.toLocaleDateString('en-US', {
+    month: '2-digit', day: '2-digit', year: 'numeric'
+  });
+  const timePart = now.toLocaleTimeString('en-US', {
+    hour: 'numeric', minute: '2-digit', hour12: true
+  });
+  const filename = `Recording ${datePart} ${timePart}.txt`;
+
+  try {
+    await driveUpload(filename, activeCase.folderId, filtered);
+    setBtnState('idle');
+    setStatus('Saved ✓', 'ok');
+    setTimeout(() => setStatus('Tap to record', ''), 2800);
+  } catch(e) {
+    if (e.message === 'auth') {
+      invalidateToken(); show('connect'); return;
+    }
+    // Fallback: copy to clipboard so nothing is lost
+    try {
+      await navigator.clipboard.writeText(filtered);
+      setStatus('Drive failed — text copied to clipboard instead.', 'err');
+    } catch(_) {
+      setStatus('Save failed. Check your connection.', 'err');
+    }
+    setBtnState('idle');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  ANONYMIZER
+//  Exact same logic as the desktop CASA Case Manager app.
+//  Replaces real names/values with their field labels.
+//  Longest match first so "Mary Jones" beats "Mary".
+// ═══════════════════════════════════════════════════════
+function buildMap() {
+  const pairs = [];
+  for (const row of identifiers) {
+    if (row.struck || !row.field || !row.value) continue;
+    pairs.push({ search: row.value, replace: row.field });
+    for (const alias of (row.aliases || [])) {
+      pairs.push({ search: alias, replace: row.field });
+    }
+  }
+  pairs.sort((a, b) => b.search.length - a.search.length);
+  return pairs;
+}
+
+function anonymize(text) {
+  let result = text;
+  for (const { search, replace } of buildMap()) {
+    if (!search.trim()) continue;
+    const esc = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    result = result.replace(new RegExp('\\b' + esc + '\\b', 'gi'), replace);
+  }
+  return result;
+}
+</script>
+</body>
+</html>
